@@ -1,0 +1,17 @@
+# Executables
+*.exe
+*.out
+*.app
+
+# Object files and dependencies
+*.o
+*.obj
+*.d
+
+# VS Code settings
+.vscode/
+
+# OS generated files
+[Dd]esktop.ini
+Thumbs.db
+.DS_Store
