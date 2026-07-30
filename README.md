@@ -84,6 +84,25 @@ Designed with strict separation of concerns, the compiler features a hand-writte
 Clone the repository and build the binary via `Makefile`:
 ```bash
 mingw32-make
-This produces the compiler executable NttTrang.exe along with intermediate object files.2. Compile C Source Code to AssemblyRun the compiler against a target C source/test file (e.g., test.txt):Bash./NttTrang test.txt
-The compiler parses test.txt and writes the generated x86-64 code into target.asm.3. Assemble, Link, and RunAssemble target.asm using GCC and execute the resulting binary:PowerShellgcc -x assembler -masm=intel target.asm -o target.exe ; if ($?) { .\target.exe }
-💡 Key Highlights of the Update:Architecture & Pipeline: Added pointer/array scaling, scope resolution, and break/continue context to the ASCII pipeline.Technical Details: Added specific low-level x86 details like movsx/movzx, dynamic scale-factor arithmetic ($sizeof(T)$), and loop context stacks to reflect your low-level implementation choices accurately.Sample Code: Updated test.txt in the README to showcase for, while, break, pointers (*ptr), and array indexing (arr[i]) simultaneously.
+```
+*This produces the compiler executable `NttTrang.exe` along with intermediate object files.*
+
+#### 2. Compile C Source Code to Assembly
+Run the compiler against a target C source/test file (e.g., `test.txt`):
+```bash
+./NttTrang test.txt
+```
+*The compiler parses `test.txt` and writes the generated x86-64 code into `target.asm`.*
+
+#### 3. Assemble, Link, and Run
+Assemble `target.asm` using GCC and execute the resulting binary:
+```powershell
+gcc -x assembler -masm=intel target.asm -o target.exe ; if ($?) { .\target.exe }
+```
+
+---
+
+### 💡 Key Highlights of the Update:
+1. **Architecture & Pipeline:** Added pointer/array scaling, scope resolution, and `break`/`continue` context to the ASCII pipeline.
+2. **Technical Details:** Added specific low-level x86 details like `movsx`/`movzx`, dynamic scale-factor arithmetic ($sizeof(T)$), and loop context stacks to reflect your low-level implementation choices accurately.
+3. **Sample Code:** Updated `test.txt` in the README to showcase `for`, `while`, `break`, pointers (`*ptr`), and array indexing (`arr[i]`) simultaneously.
