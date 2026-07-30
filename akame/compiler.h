@@ -35,11 +35,19 @@ typedef enum {
     NODE_LESS_EQUAL,
     NODE_GREATER_EQUAL,
     NODE_GREATER_THAN,
-    NODE_NOT_EQUAL
+    NODE_NOT_EQUAL,
+    NODE_ADDR,
+    NODE_DEREF,
+    NODE_ARRAY_ACCESS,
+    NODE_FOR,
+    NODE_FOR_HEADER,
+    NODE_BREAK,
+    NODE_CONTINUE
 } ASTNodeType;
 
 typedef enum {
     TOKEN_INT_KEYWORD, // Từ khóa 'int'
+    TOKEN_CHAR_KEYWORD,
     TOKEN_IDENTIFIER,  // Tên biến (ví dụ: x, y, sum)
     TOKEN_ASSIGN,      // Toán tử gán '='
     TOKEN_NUMBER,      // Con số (ví dụ: 42, 100)
@@ -68,14 +76,26 @@ typedef enum {
     TOKEN_BITWISE_SHIFT_RIGHT,
     TOKEN_LESS_EQUAL,
     TOKEN_GREATER_EQUAL,
-    TOKEN_NOT_EQUAL
+    TOKEN_NOT_EQUAL,
+    TOKEN_CHAR_LITERAL,
+    TOKEN_POINTER,
+    TOKEN_GET_ADDRESS,
+    TOKEN_LBRACKET,
+    TOKEN_RBRACKET,
+    TOKEN_FOR_KEYWORD,
+    TOKEN_BREAK_KEYWORD,
+    TOKEN_CONTINUE_KEYWORD
 } TokenType;
 
 typedef enum {
     TYPE_UNKNOWN,
     TYPE_INT,       // 8 bytes (hoặc 4 bytes)
     TYPE_CHAR,      // 1 byte
-    TYPE_VOID
+    TYPE_VOID,
+    TYPE_INT_PTR,
+    TYPE_CHAR_PTR,
+    TYPE_INT_ARRAY,
+    TYPE_CHAR_ARRAY
 } DataType;
 
 // Cấu trúc đóng gói thông tin của một Token
@@ -92,6 +112,9 @@ typedef struct ASTNode {
     char name[64];             // Dùng để lưu tên biến (nếu là NODE_VARIABLE)
     int int_value;             // Dùng để lưu giá trị số (nếu là NODE_LITERAL)
     char *string_value;
+
+    int element_count;
+
     struct ASTNode *left;      // Con trỏ chỉ tới nút con bên trái
     struct ASTNode *right;     // Con trỏ chỉ tới nút con bên phải
 
@@ -100,9 +123,10 @@ typedef struct ASTNode {
 typedef struct S{
     char symbol_name[25];
     DataType data_type;
+    int size_bytes;
 } Symbol;
 
-ASTNode *makeNew_String(char n[]);
+ASTNode *makeNew_String(char *n);
 ASTNode *makeNew_Variable(char n[], DataType dt);
 ASTNode *makeNew_Literal(int value);
 ASTNode *makeNew_Assign(ASTNode *var, ASTNode *literal);
@@ -110,7 +134,7 @@ ASTNode *makeNew_Operation(ASTNode *literal1, ASTNode *literal2, ASTNodeType typ
 void inOrder(ASTNode *root);
 void FreeAll(ASTNode *root);
 void Assembly_Generator(ASTNode *root);
-int find_variable(char n[]);
+int find_variable(char n[], int size);
 void print_header();
 void print_end_assembly();
 void print_header_to_asm();
@@ -120,5 +144,6 @@ int check_is_operation(ASTNodeType type);
 char *function_for_operation(ASTNodeType type);
 int compiler_check_is_comparison_node(ASTNodeType type);
 char *compiler_comparison_classification(ASTNodeType type);
+int get_aligned_stack_size();
 
 #endif

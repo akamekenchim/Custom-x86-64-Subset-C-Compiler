@@ -127,7 +127,7 @@ Token get_token(char source[], int *pos){
         return t;
     }
     // cac dau ngoac va dau cham phay
-    if(source[*pos] == '{' || source[*pos] == '(' || source[*pos] == ')' || source[*pos] == '}' || source[*pos] == ';'){
+    if(source[*pos] == '{' || source[*pos] == '(' || source[*pos] == ')' || source[*pos] == '}' || source[*pos] == ';' || source[*pos] == '[' || source[*pos] == ']'){
         t.type = check_is_bracket(source[*pos]);
         t.lexeme[0] = source[*pos];
         t.lexeme[1] = '\0';
@@ -148,6 +148,39 @@ Token get_token(char source[], int *pos){
         t.type = TOKEN_STRING;
         return t;
     }
+    // xu li char literal
+    if(source[*pos] == '\''){
+        (*pos)++;
+        char c = source[*pos];
+        int char_val = (int)c;
+        int i = 0;
+        if(c == '\\'){
+            t.lexeme[i++] = c;
+            (*pos)++;
+            char esc = source[*pos];
+            t.lexeme[i++] = esc;
+            if(esc == 'n') char_val = '\n';
+            else if (esc == 't') char_val = '\t'; // 9
+            else if (esc == '0') char_val = '\0'; // 0
+            else char_val = esc;
+        }
+        else {
+            t.lexeme[i++] = c;
+        }
+        t.lexeme[i] = '\0';
+        (*pos)++;
+        if (source[*pos] == '\'') {
+            (*pos)++; // Bỏ qua dấu ' đóng
+        } else {
+            printf("Lexer Error: Unclosed character literal!\n");
+            exit(1);
+        }
+        
+        // Tạo token hằng ký tự
+        t.type = TOKEN_CHAR_LITERAL;
+        t.value = char_val; 
+        return t;
+    }
     // neu khong phai tat ca nhung cai kia
     t.type = TOKEN_EOF;
     strcpy(t.lexeme, "EOF");
@@ -157,10 +190,14 @@ Token get_token(char source[], int *pos){
 // cac ham tien ich
 TokenType check_is_keyword(char token[]){
     if(strcmp(token, "int") == 0) return TOKEN_INT_KEYWORD;
+    if(strcmp(token, "char") == 0) return TOKEN_CHAR_KEYWORD;
     if(strcmp(token, "if") == 0) return TOKEN_IF;
     if(strcmp(token, "else") == 0) return TOKEN_ELSE;
     if(strcmp(token, "printf") == 0) return TOKEN_PRINT;
     if(strcmp(token, "while") == 0) return TOKEN_WHILE;
+    if(strcmp(token, "for") == 0) return TOKEN_FOR_KEYWORD;
+    if(strcmp(token, "break") == 0) return TOKEN_BREAK_KEYWORD;
+    if(strcmp(token, "continue") == 0) return TOKEN_CONTINUE_KEYWORD;
     return TOKEN_IDENTIFIER;
 }
 char *token_type_converter(TokenType t){
@@ -187,6 +224,8 @@ TokenType check_is_bracket(char c){
     else if(c == '(') return TOKEN_LPAREN;
     else if(c == ')') return TOKEN_RPAREN;
     else if(c == ';') return TOKEN_SEMICOLON;
+    else if(c == ']') return TOKEN_RBRACKET;
+    else if(c == '[') return TOKEN_LBRACKET;
     return TOKEN_EOF;
 }
 

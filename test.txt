@@ -1,71 +1,149 @@
-printf("=== EXPLICIT TYPE INT INTEGRATION TEST ===\n");
+printf("====================================================\n");
+printf("     C COMPILER HARDCORE EDGE-CASE TEST SUITE       \n");
+printf("====================================================\n");
 
-int x = 15;
-int y = 20;
-int z = 15;
+int pass_count = 0;
+int fail_count = 0;
 
-if (x == z) {
-    printf("Test 1 (==): PASSED\n");
-} else {
-    printf("Test 1 (==): FAILED\n");
-}
-
-if (x != y) {
-    printf("Test 2 (!=): PASSED\n");
-} else {
-    printf("Test 2 (!=): FAILED\n");
-}
-
-if (x < y) {
-    printf("Test 3 (<): PASSED\n");
-} else {
-    printf("Test 3 (<): FAILED\n");
-}
-
-if (y > x) {
-    printf("Test 4 (>): PASSED\n");
-} else {
-    printf("Test 4 (>): FAILED\n");
-}
-
-if (x <= z) {
-    printf("Test 5 (<=): PASSED\n");
-} else {
-    printf("Test 5 (<=): FAILED\n");
-}
-
-if (y >= x) {
-    printf("Test 6 (>=): PASSED\n");
-} else {
-    printf("Test 6 (>=): FAILED\n");
-}
-
-int calc = ((x + 5) * 2 - 10) / 3;
-int bit_calc = ((calc << 2) & 31) | 1;
-
-printf("Calculated bit_calc: ");
-printf(bit_calc);
-
-int i = 0;
-int acc;
-acc = 0;
-
-while (i != 6) {
-    if (i % 2 == 0) {
-        acc = acc + i * 3;
-    } else {
-        acc = acc + (i << 1);
+int grid[9];
+int r = 0;
+while (r < 3) {
+    int c = 0;
+    for (c = 0; c < 3; c = c + 1) {
+        grid[r * 3 + c] = (r + 1) * 10 + (c + 1);
     }
-    i = i + 1;
+    r = r + 1;
 }
 
-printf("Loop Accumulator Result: ");
-printf(acc);
+int diag_sum = 0;
+int k = 0;
+for (k = 0; k < 3; k = k + 1) {
+    diag_sum = diag_sum + grid[k * 3 + k];
+}
 
-if (acc == 36) {
-    printf("Final Check: PASSED\n");
+if (grid[0] == 11) {
+    if (grid[4] == 22) {
+        if (grid[8] == 33) {
+            if (diag_sum == 66) {
+                printf("[1] 1D Grid & Scaled Indexing: PASSED\n");
+                pass_count = pass_count + 1;
+            } else {
+                printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
+                fail_count = fail_count + 1;
+            }
+        } else {
+            printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
+            fail_count = fail_count + 1;
+        }
+    } else {
+        printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
+        fail_count = fail_count + 1;
+    }
 } else {
-    printf("Final Check: FAILED\n");
+    printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
+    fail_count = fail_count + 1;
 }
 
-printf("=== ALL TESTS COMPLETED ===\n");
+char s[6];
+s[0] = 97;
+s[1] = 98;
+s[2] = 99;
+s[3] = 100;
+s[4] = 101;
+s[5] = 0;
+
+char *left_ptr = s;
+int left_idx = 0;
+int right_idx = 4;
+
+while (left_idx < right_idx) {
+    char temp = left_ptr[left_idx];
+    left_ptr[left_idx] = left_ptr[right_idx];
+    left_ptr[right_idx] = temp;
+    left_idx = left_idx + 1;
+    right_idx = right_idx - 1;
+}
+
+if (s[0] == 101) {
+    if (s[1] == 100) {
+        if (s[2] == 99) {
+            if (s[4] == 97) {
+                printf("[2] Two-Pointer Char In-Place Swap: PASSED\n");
+                pass_count = pass_count + 1;
+            } else {
+                printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
+                fail_count = fail_count + 1;
+            }
+        } else {
+            printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
+            fail_count = fail_count + 1;
+        }
+    } else {
+        printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
+        fail_count = fail_count + 1;
+    }
+} else {
+    printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
+    fail_count = fail_count + 1;
+}
+
+int total_acc = 0;
+int outer_cnt = 0;
+
+while (outer_cnt < 4) {
+    outer_cnt = outer_cnt + 1;
+    int inner_cnt = 0;
+    for (inner_cnt = 1; inner_cnt <= 5; inner_cnt = inner_cnt + 1) {
+        if (inner_cnt % 2 == 0) {
+            continue;
+        }
+        if (inner_cnt > 3) {
+            break;
+        }
+        total_acc = total_acc + inner_cnt;
+    }
+}
+
+if (total_acc == 16) {
+    printf("[3] Interleaved Flow Control: PASSED\n");
+    pass_count = pass_count + 1;
+} else {
+    printf("[3] Interleaved Flow Control: FAILED\n");
+    fail_count = fail_count + 1;
+}
+
+int val_a = 50;
+int val_b = 100;
+int *p1 = &val_a;
+int *p2 = &val_b;
+
+*p1 = *p1 + 25;
+*p2 = *p2 - *p1;
+p1 = p2;
+*p1 = *p1 * 2;
+
+if (val_a == 75) {
+    if (val_b == 50) {
+        printf("[4] Pointer Deref & Re-assignment: PASSED\n");
+        pass_count = pass_count + 1;
+    } else {
+        printf("[4] Pointer Deref & Re-assignment: FAILED\n");
+        fail_count = fail_count + 1;
+    }
+} else {
+    printf("[4] Pointer Deref & Re-assignment: FAILED\n");
+    fail_count = fail_count + 1;
+}
+
+printf("====================================================\n");
+printf("Passed Modules: ");
+printf(pass_count);
+printf("Failed Modules: ");
+printf(fail_count);
+
+if (fail_count == 0) {
+    printf(">>> HARDCORE EDGE-CASE TESTS PASSED! <<<\n");
+} else {
+    printf(">>> HARDCORE EDGE-CASE TESTS FAILED! <<<\n");
+}
+printf("====================================================\n");

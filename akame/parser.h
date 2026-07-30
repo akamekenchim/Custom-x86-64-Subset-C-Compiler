@@ -17,9 +17,10 @@ ASTNode *parse_bitwise_or();
 ASTNode *parse_bitwise_and();
 ASTNode *parse_shift();
 ASTNode *parse_multiplicative();
+ASTNode *parse_unary();
 int parser_check_is_comparison(TokenType type);
 ASTNodeType parser_classify_comparison(TokenType type);
-void parser_add_symbol(DataType dtt, char n[]);
+void parser_add_symbol(DataType dtt, char n[], int size);
 int parser_find_symbol(char name[]);
 
 #endif

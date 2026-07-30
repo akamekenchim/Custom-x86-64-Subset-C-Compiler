@@ -2,12 +2,36 @@
 #include "codegen.h"
 #include <string.h>
 #include <ctype.h>
+#define LOOP_FOR 0
+#define LOOP_WHILE 1
 
+typedef struct {
+    int label_id; // ID nhãn (local_label)
+    int type;     // LOOP_FOR hoặc LOOP_WHILE
+} LoopItem;
+
+static LoopItem loop_stack[100]; // Đủ chứa 100 cấp vòng lặp lồng nhau
+static int loop_top = -1;
+
+// Hàm push nhãn vào Stack
+void push_loop(int label_id, int type) {
+    loop_top++;
+    loop_stack[loop_top].label_id = label_id;
+    loop_stack[loop_top].type = type;
+}
+
+// Hàm pop nhãn khỏi Stack
+void pop_loop() {
+    if (loop_top >= 0) {
+        loop_top--;
+    }
+}
 // bảng tra cứu biến toàn cục
-Variable var_table[100];
+Variable var_table[1000];
 int var_count = 0;
 static int label_count = 0;
 static int string_count = 0;
+static int current_stack_offset = 0;
 
 // tạo node biến
 ASTNode *makeNew_Variable(char n[], DataType dt){
@@ -28,6 +52,7 @@ ASTNode *makeNew_Literal(int value){
     newNode->right = NULL;
     return newNode;
 }
+// tạo node xâu
 ASTNode *makeNew_String(char *n){
     ASTNode *newNode = (ASTNode *)malloc(sizeof(ASTNode));
     newNode->string_value = strdup(n);
@@ -69,16 +94,97 @@ void FreeAll(ASTNode *root){
 // dịch cây abstract syntax ra mã assembly x86
 void Assembly_Generator(ASTNode *root){
     if(root == NULL) return;
+    // Khi gặp node_seq: là node để kiểm soát việc nhập nhiều câu lệnh.
+    // Sinh mã lần lượt cho con trái và con phải.
     if(root->type == NODE_SEQ){
         Assembly_Generator(root->left);
         Assembly_Generator(root->right);
     }
-    if(root->type == NODE_ASSIGN){
-        Assembly_Generator(root->right);
-        int index = find_variable((root->left)->name);
-        printf("\tmov [rbp - %d] (%s), rax\n", var_table[index].offset, (root->left)->name);
-        asm_printf("\tmov [rbp - %d], rax\n", var_table[index].offset);
+    // Khi gặp node '=': xét các trường hợp
+    if (root->type == NODE_ASSIGN) {
+        if (root->left->type == NODE_ARRAY_ACCESS) {
+            // 1. Tính giá trị vế phải -> push rax
+            Assembly_Generator(root->right);
+            printf("\tpush rax\n");
+            asm_printf("\tpush rax\n");
+
+            Assembly_Generator(root->left->right);
+
+            DataType var_type = root->left->left->data_type;
+
+            // 4. Tính elem_size dưa trên kiểu dữ liệu của biến
+            int elem_size = (var_type == TYPE_CHAR_PTR || var_type == TYPE_CHAR_ARRAY) ? 1 : 8;
+            printf("\timul rax, %d\n", elem_size);
+            asm_printf("\timul rax, %d\n", elem_size);
+
+            // 5. Lấy Base Offset
+            char *arr_name = root->left->left->name;
+            int index = find_variable(arr_name, root->left->left->element_count);
+            int base_offset = var_table[index].offset;
+
+            // 6. PHÂN BIỆT CON TRỎ VÀ MẢNG TỪ NODE DATA_TYPE
+            if (var_type == TYPE_CHAR_PTR || var_type == TYPE_INT_PTR) {
+                // Con trỏ: Đọc giá trị địa chỉ lưu trong ô nhớ [rbp - offset]
+                printf("\tmov rbx, [rbp - %d]\n", base_offset);
+                asm_printf("\tmov rbx, [rbp - %d]\n", base_offset);
+            } else {
+                // Mảng: Lấy địa chỉ của vùng nhớ [rbp - offset]
+                printf("\tlea rbx, [rbp - %d]\n", base_offset);
+                asm_printf("\tlea rbx, [rbp - %d]\n", base_offset);
+            }
+
+            printf("\tadd rax, rbx\n");
+            asm_printf("\tadd rax, rbx\n");
+
+            // 7. Pop vế phải -> rbx và ghi vào [rax]
+            printf("\tpop rbx\n");
+            asm_printf("\tpop rbx\n");
+
+            if (elem_size == 1) {
+                printf("\tmov byte ptr [rax], bl\n");
+                asm_printf("\tmov byte ptr [rax], bl\n");
+            } else {
+                printf("\tmov [rax], rbx\n");
+                asm_printf("\tmov [rax], rbx\n");
+            }
+        }
+        // 1. Gán qua con trỏ giải tham chiếu: *p = expr
+        else if (root->left->type == NODE_DEREF) {
+            Assembly_Generator(root->right);
+            printf("\tpush rax\n");
+            asm_printf("\tpush rax\n");
+
+            Assembly_Generator(root->left->left);
+
+            printf("\tpop rbx\n");
+            asm_printf("\tpop rbx\n");
+
+            if (root->left->data_type == TYPE_CHAR) {
+                printf("\tmov byte ptr [rax], bl\n");
+                asm_printf("\tmov byte ptr [rax], bl\n");
+            } else {
+                printf("\tmov [rax], rbx\n");
+                asm_printf("\tmov [rax], rbx\n");
+            }
+        }
+        // 2. Gán biến hoặc con trỏ trực tiếp: x = expr HOẶC p = expr
+        else {
+            Assembly_Generator(root->right);
+            int index = find_variable((root->left)->name, (root->left)->element_count);
+            DataType dtt = (root->left)->data_type;
+
+            if (dtt == TYPE_CHAR) {
+                // Chỉ kiểu char mới dùng byte ptr (1 byte)
+                printf("\tmov byte ptr [rbp - %d] (%s), al\n", var_table[index].offset, (root->left)->name);
+                asm_printf("\tmov byte ptr [rbp - %d], al\n", var_table[index].offset);
+            } else {
+                // TYPE_INT, TYPE_INT_PTR, TYPE_CHAR_PTR đều dùng 64-bit (8 bytes)
+                printf("\tmov [rbp - %d] (%s), rax\n", var_table[index].offset, (root->left)->name);
+                asm_printf("\tmov [rbp - %d], rax\n", var_table[index].offset);
+            }
+        }
     }
+    // gặp node phép toán 2 ngôi
     if(check_is_operation(root->type)){
         Assembly_Generator(root->right);
         printf("\tpush rax\n");
@@ -89,6 +195,7 @@ void Assembly_Generator(ASTNode *root){
         printf("\t%s rax, rbx\n", function_for_operation(root->type));
         asm_printf("\t%s rax, rbx\n", function_for_operation(root->type));
     }
+    // gặp node phép chia hoặc chia lấy dư
     if(root->type == NODE_DIVIDE || root->type == NODE_REMAINDER){
         Assembly_Generator(root->right);
         printf("\tpush rax\n");
@@ -105,6 +212,7 @@ void Assembly_Generator(ASTNode *root){
             asm_printf("\tmov rax, rdx\n");
         }
     }
+    // các phép toán dịch bit
     if(root->type == NODE_BITWISE_SHIFT_LEFT || root->type == NODE_BITWISE_SHIFT_RIGHT){
         Assembly_Generator(root->right);
         printf("\tpush rax\n");
@@ -115,15 +223,30 @@ void Assembly_Generator(ASTNode *root){
         printf("\t%s rax, cl\n", root->type == NODE_BITWISE_SHIFT_LEFT ? "sal" : "sar");
         asm_printf("\t%s rax, cl\n", root->type == NODE_BITWISE_SHIFT_LEFT ? "sal" : "sar");
     }
+    // gặp các node số có giá trị 
     if(root->type == NODE_LITERAL){
         printf("\tmov rax, %d\n", root->int_value);
         asm_printf("\tmov rax, %d\n", root->int_value);
     }
+    // gặp các biến đứng độc lập
     if(root->type == NODE_VARIABLE){
-        int index = find_variable(root->name);
-        printf("\tmov rax, [rbp - %d] (%s)\n", var_table[index].offset, root->name);
-        asm_printf("\tmov rax, [rbp - %d]\n", var_table[index].offset);
+        int size = root->element_count;
+        int index = find_variable(root->name, size);
+        DataType cur_type = root->data_type;
+        if(cur_type == TYPE_INT || cur_type == TYPE_INT_PTR || cur_type == TYPE_CHAR_PTR){
+            printf("\tmov rax, [rbp - %d] (%s)\n", var_table[index].offset, root->name);
+            asm_printf("\tmov rax, [rbp - %d]\n", var_table[index].offset);
+        }
+        if(cur_type == TYPE_CHAR){
+            printf("\tmovzx rax, byte ptr [rbp - %d] (%s)\n", var_table[index].offset, root->name);
+            asm_printf("\tmovzx rax, byte ptr [rbp - %d]\n", var_table[index].offset);
+        }
+        if(cur_type == TYPE_CHAR_ARRAY || cur_type == TYPE_INT_ARRAY){
+            printf("\tlea rax, [rbp - %d] (%s base address)\n", var_table[index].offset, root->name);
+            asm_printf("\tlea rax, [rbp - %d]\n", var_table[index].offset);
+        }
     }
+    // xử lí node IF
     if(root->type == NODE_IF){
         // gọi sang nhánh condition
         int local_label = label_count++;
@@ -155,6 +278,10 @@ void Assembly_Generator(ASTNode *root){
         }
         
     }
+    if(root->type == NODE_IF_BODY){
+
+    }
+    // các phép so sánh
     if(compiler_check_is_comparison_node(root->type)){
         Assembly_Generator(root->right);
         printf("\tpush rax\n");
@@ -165,9 +292,7 @@ void Assembly_Generator(ASTNode *root){
         asm_printf("\tpop rbx\n");
         asm_printf("\tcmp rax, rbx\n");
     }
-    if(root->type == NODE_IF_BODY){
-
-    }
+    // xử lí hàm print
     if(root->type == NODE_PRINT){
         // 1. Duyệt con trái để tính toán biểu thức. Kết quả cuối cùng sẽ nằm trong rax
         Assembly_Generator(root->left);
@@ -193,8 +318,10 @@ void Assembly_Generator(ASTNode *root){
         printf("\tadd rsp, 32\n");
         asm_printf("\tadd rsp, 32\n");
     }
+    // xử lí vòng lặp while
     if(root->type == NODE_WHILE){
         int local_label = label_count++;
+        push_loop(local_label, LOOP_WHILE);
         printf(".L_start_while_%d:\n", local_label);
         asm_printf(".L_start_while_%d:\n", local_label);
 
@@ -207,7 +334,9 @@ void Assembly_Generator(ASTNode *root){
         asm_printf("\tjmp .L_start_while_%d\n", local_label);
         printf(".L_end_while_%d:\n", local_label);
         asm_printf(".L_end_while_%d:\n", local_label);
+        pop_loop();
     }
+    // xử lí node xâu
     if (root->type == NODE_STRING) {
         int str_id = string_count++;
         // 1. Tạm thời chuyển sang phân vùng .rodata để định nghĩa chuỗi
@@ -225,19 +354,175 @@ void Assembly_Generator(ASTNode *root){
         asm_printf("\n.section .rodata\n.L_str_%d:\n\t.asciz \"%s\"\n.section .text\n", str_id, root->string_value);
         asm_printf("\tlea rax, [rip + .L_str_%d]\n", str_id);
     }
+    // xử lí phép lấy địa chỉ
+    if(root->type == NODE_ADDR){
+        int index = find_variable(root->left->name, root->element_count);
+        int offset = var_table[index].offset;
+        printf("\tlea rax, [rbp - %d] (%s)\n", offset, root->left->name);
+        asm_printf("\tlea rax, [rbp - %d]\n", offset);
+    }
+    // xử lí phép giải tham chiếu
+    if(root->type == NODE_DEREF){
+        Assembly_Generator(root->left);
+        if (root->data_type == TYPE_CHAR) {
+        // Đọc 1 byte tại địa chỉ [rax]
+            printf("\tmovzx rax, byte ptr [rax]\n");
+            asm_printf("\tmovzx rax, byte ptr [rax]\n");
+        } else {
+            // Đọc 8 byte tại địa chỉ [rax]
+            printf("\tmov rax, [rax]\n");
+            asm_printf("\tmov rax, [rax]\n");
+        }
+    }
+    if (root->type == NODE_ARRAY_ACCESS) {
+        // 1. Tính chỉ số i (con phải) -> rax
+        Assembly_Generator(root->right);
+
+        // 2. Đọc kiểu dữ liệu của biến từ AST Node (root->left)
+        DataType var_type = root->left->data_type;
+
+        // 3. Tính elem_size
+        int elem_size = (var_type == TYPE_CHAR_PTR || var_type == TYPE_CHAR_ARRAY) ? 1 : 8;
+        printf("\timul rax, %d\n", elem_size);
+        asm_printf("\timul rax, %d\n", elem_size);
+
+        // 4. Lấy Base Offset
+        char *arr_name = root->left->name;
+        int index = find_variable(arr_name, root->left->element_count);
+        int base_offset = var_table[index].offset;
+
+        // 5. PHÂN BIỆT CON TRỎ VÀ MẢNG TỪ NODE DATA_TYPE
+        if (var_type == TYPE_CHAR_PTR || var_type == TYPE_INT_PTR) {
+            printf("\tmov rbx, [rbp - %d]\n", base_offset);
+            asm_printf("\tmov rbx, [rbp - %d]\n", base_offset);
+        } else {
+            printf("\tlea rbx, [rbp - %d]\n", base_offset);
+            asm_printf("\tlea rbx, [rbp - %d]\n", base_offset);
+        }
+
+        printf("\tadd rax, rbx\n");
+        asm_printf("\tadd rax, rbx\n");
+
+        // 6. Giải tham chiếu đọc giá trị tại ô nhớ [rax]
+        if (elem_size == 1) {
+            printf("\tmovzx rax, byte ptr [rax]\n");
+            asm_printf("\tmovzx rax, byte ptr [rax]\n");
+        } else {
+            printf("\tmov rax, [rax]\n");
+            asm_printf("\tmov rax, [rax]\n");
+        }
+    }
+    if (root->type == NODE_FOR) {
+        int local_label = label_count++;
+        push_loop(local_label, LOOP_FOR);
+        // Bóc tách các nhánh từ AST
+        ASTNode *header = root->left;  
+        ASTNode *body_node = root->right;
+
+        ASTNode *init_node = header->left;
+        ASTNode *cond_node = header->right->left;
+        ASTNode *inc_node  = header->right->right;
+
+        // 1. Chạy biểu thức Khởi tạo (Init) - nếu có
+        if (init_node != NULL) {
+            Assembly_Generator(init_node);
+        }
+
+        // 2. Nhãn bắt đầu vòng lặp
+        printf(".L_start_for_%d:\n", local_label);
+        asm_printf(".L_start_for_%d:\n", local_label);
+
+        // 3. Kiểm tra Điều kiện (Cond) - nếu có
+        if (cond_node != NULL) {
+            Assembly_Generator(cond_node);
+            // Nếu điều kiện SAI -> Nhảy ra khỏi vòng lặp
+            printf("\t%s .L_end_for_%d\n", compiler_comparison_classification(cond_node->type), local_label);
+            asm_printf("\t%s .L_end_for_%d\n", compiler_comparison_classification(cond_node->type), local_label);
+        }
+
+        // 4. Chạy Thân vòng lặp (Body)
+        if (body_node != NULL) {
+            Assembly_Generator(body_node);
+        }
+        printf(".L_inc_for_%d:\n", local_label);
+        asm_printf(".L_inc_for_%d:\n", local_label);
+        // 5. Chạy biểu thức Tăng (Inc) - nếu có
+        if (inc_node != NULL) {
+            Assembly_Generator(inc_node);
+        }
+
+        // 6. Nhảy quay lại kiểm tra điều kiện
+        printf("\tjmp .L_start_for_%d\n", local_label);
+        asm_printf("\tjmp .L_start_for_%d\n", local_label);
+
+        // 7. Nhãn kết thúc vòng lặp
+        printf(".L_end_for_%d:\n", local_label);
+        asm_printf(".L_end_for_%d:\n", local_label);
+
+        pop_loop();
+    }
+    if (root->type == NODE_BREAK) {
+        if (loop_top < 0) {
+            printf("Semantic Error: 'break' outside loop!\n");
+            exit(1);
+        }
+        int cur_id = loop_stack[loop_top].label_id;
+        int cur_type = loop_stack[loop_top].type;
+
+        if (cur_type == LOOP_FOR) {
+            printf("\tjmp .L_end_for_%d\n", cur_id);
+            asm_printf("\tjmp .L_end_for_%d\n", cur_id);
+        } else {
+            printf("\tjmp .L_end_while_%d\n", cur_id);
+            asm_printf("\tjmp .L_end_while_%d\n", cur_id);
+        }
+    }
+    if (root->type == NODE_CONTINUE) {
+        if (loop_top < 0) {
+            printf("Semantic Error: 'continue' outside loop!\n");
+            exit(1);
+        }
+        int cur_id = loop_stack[loop_top].label_id;
+        int cur_type = loop_stack[loop_top].type;
+
+        if (cur_type == LOOP_FOR) {
+            // Continue trong for nhảy về bước TĂNG (inc)
+            printf("\tjmp .L_inc_for_%d\n", cur_id);
+            asm_printf("\tjmp .L_inc_for_%d\n", cur_id);
+        } else {
+            // Continue trong while nhảy về bước KIỂM TRA ĐIỀU KIỆN
+            printf("\tjmp .L_start_while_%d\n", cur_id);
+            asm_printf("\tjmp .L_start_while_%d\n", cur_id);
+        }
+    }
 }
+
+/* =========================================
+===============Các hàm tiện ích============== */
+
 // khi tạo variable cần khởi tạo khoảng trống (base pointer). Khi khởi tạo ta cho vào mảng var và duyệt tuần tự
-int find_variable(char n[]){
-    for(int i = 0; i<var_count; i++){
-        if(strcmp(n, var_table[i].name)==0){
+int find_variable(char n[], int size) {
+    // 1. Tra cứu: Nếu đã có -> Trả về vị trí cũ ngay
+    for (int i = 0; i < var_count; i++) {
+        if (strcmp(n, var_table[i].name) == 0) {
             return i;
         }
     }
     Variable newVar;
     strcpy(newVar.name, n);
-    newVar.offset = 8*(var_count + 1);
+
+    current_stack_offset += size * 8; // Mảng 10 phần tử -> chiếm 80 bytes
+    newVar.offset = current_stack_offset;
+
     var_table[var_count++] = newVar;
     return (var_count - 1);
+}
+int get_aligned_stack_size(){
+    int total = current_stack_offset; // Tích lũy từ find_variable
+    if (total % 16 != 0) {
+        total = (total / 16 + 1) * 16; // Làm tròn lên bội số của 16
+    }
+    return total;
 }
 // Các hàm tiện ích cho việc tạo file ASM và các thao tác khác
 void print_header(){
@@ -246,7 +531,7 @@ void print_header(){
     printf("main:\n");
     printf("\tpush rbp\n");
     printf("\tmov rbp, rsp\n");
-    printf("\tsub rsp, 16\n");
+    printf("\tsub rsp, %d\n", 1024);
 }
 
 void print_end_assembly(){
@@ -261,7 +546,7 @@ void print_header_to_asm(){
     asm_printf("main:\n");
     asm_printf("\tpush rbp\n");
     asm_printf("\tmov rbp, rsp\n");
-    asm_printf("\tsub rsp, 64\n");
+    asm_printf("\tsub rsp, %d\n", 1024);
 
     asm_printf(".section .rodata\n");
     asm_printf("fmt_int:\n");
@@ -320,4 +605,10 @@ char *compiler_comparison_classification(ASTNodeType type){
     else if(type == NODE_EQUAL) return "jne";
     else if(type == NODE_NOT_EQUAL) return "je";
     else return 0;
+}
+int get_element_size(DataType dt) {
+    if (dt == TYPE_CHAR || dt == TYPE_CHAR_ARRAY || dt == TYPE_CHAR_PTR) {
+        return 1;
+    }
+    return 8; // TYPE_INT, TYPE_INT_ARRAY, TYPE_INT_PTR
 }
