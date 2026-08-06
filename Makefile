@@ -1,26 +1,27 @@
-# 1. Trình biên dịch
+# declares the underlying compiler: GCC
 CC = gcc
 
-# 2. Cờ biên dịch (Compiler Flags)
-# -Iakame : Chỉ thị cho Preprocessor (Bộ tiền xử lý) tìm kiếm file header (.h) trong thư mục 'akame'
-# -MMD -MP: Tự động phân tích và sinh ra các file .d chứa dependency của từng file .o
+# System flags:
+# -Wall -Wextra: prints all warnings to the terminal.
+# -Iakame: 'Include-Akame', so the preprocessor knows to find header files in the akame folder
+# -MMD -MP: processes the source code and automatically makes dependency files.
 CFLAGS = -Wall -Wextra -g -Iakame -MMD -MP
 
-# 3. Tên file thực thi sản sinh ra
+# declares the target file name
 TARGET = NttTrang
 
-# 4. Quản lý danh sách file nguồn
+# source files
 SRCS = main.c compiler.c lexer.c parser.c codegen.c
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
-# 5. Các target không sinh ra file vật lý
+# make sure the target files wont physically produce files
 .PHONY: all clean
 
-# Target mặc định
+# default target file
 all: $(TARGET)
 
-# Quy tắc liên kết (Linking phase) để tạo ra NttTrang
+# Linking phase, creating the program target file
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 

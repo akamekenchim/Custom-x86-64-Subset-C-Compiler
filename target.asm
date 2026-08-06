@@ -1,17 +1,168 @@
 .intel_syntax noprefix
-.global main
-main:
-	push rbp
-	mov rbp, rsp
-	sub rsp, 1024
 .section .rodata
 fmt_int:
 	.asciz "%d\n"
 .text
 
+.global add
+add:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 48
+	mov [rbp - 8], rcx
+	mov [rbp - 16], rdx
+	mov rax, [rbp - 16]
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	add rax, rbx
+	jmp .L_ret_add
+.L_ret_add:
+	mov rsp, rbp
+	pop rbp
+	ret
+
+.global sub
+sub:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 48
+	mov [rbp - 8], rcx
+	mov [rbp - 16], rdx
+	mov rax, [rbp - 16]
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	sub rax, rbx
+	jmp .L_ret_sub
+.L_ret_sub:
+	mov rsp, rbp
+	pop rbp
+	ret
+
+.global fibonacci
+fibonacci:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 48
+	mov [rbp - 8], rcx
+	mov rax, 0
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	cmp rax, rbx
+	jg .L_else_0
+	mov rax, 0
+	jmp .L_ret_fibonacci
+.L_else_0:
+	mov rax, 1
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	cmp rax, rbx
+	jne .L_else_1
+	mov rax, 1
+	jmp .L_ret_fibonacci
+.L_else_1:
+	mov rax, 2
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	sub rax, rbx
+	push rax
+	mov rax, 2
+	push rax
+	pop rdx
+	pop rcx
+	sub rsp, 32
+	call fibonacci
+	add rsp, 32
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	sub rax, rbx
+	push rax
+	mov rax, 1
+	push rax
+	pop rdx
+	pop rcx
+	sub rsp, 32
+	call fibonacci
+	add rsp, 32
+	pop rbx
+	add rax, rbx
+	jmp .L_ret_fibonacci
+.L_ret_fibonacci:
+	mov rsp, rbp
+	pop rbp
+	ret
+
+.global mutate_array
+mutate_array:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 64
+	mov [rbp - 8], rcx
+	mov [rbp - 16], rdx
+	mov rax, 0
+	mov [rbp - 24], rax
+.L_start_for_2:
+	mov rax, [rbp - 16]
+	push rax
+	mov rax, [rbp - 24]
+	pop rbx
+	cmp rax, rbx
+	jge .L_end_for_2
+	mov rax, 2
+	push rax
+	mov rax, [rbp - 24]
+	imul rax, 8
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	add rax, rbx
+	mov rax, [rax]
+	neg rax
+	pop rbx
+	imul rax, rbx
+	push rax
+	mov rax, [rbp - 24]
+	imul rax, 8
+	push rax
+	mov rax, [rbp - 8]
+	pop rbx
+	add rax, rbx
+	pop rbx
+	mov [rax], rbx
+.L_inc_for_2:
+	mov rax, 1
+	push rax
+	mov rax, [rbp - 24]
+	pop rbx
+	add rax, rbx
+	mov [rbp - 24], rax
+	jmp .L_start_for_2
+.L_end_for_2:
+	mov rax, 0
+	jmp .L_ret_mutate_array
+.L_ret_mutate_array:
+	mov rsp, rbp
+	pop rbp
+	ret
+
+.global main
+main:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 160
+	mov rax, 0
+	mov [rbp - 8], rax
+
 .section .rodata
 .L_str_0:
-	.asciz "====================================================\n"
+	.asciz "==================================================\n"
 .section .text
 	lea rax, [rip + .L_str_0]
 	mov rcx, rax
@@ -21,7 +172,7 @@ fmt_int:
 
 .section .rodata
 .L_str_1:
-	.asciz "     C COMPILER HARDCORE EDGE-CASE TEST SUITE       \n"
+	.asciz "   COMPILER LIMIT & STRESS TEST SUITE (EXTREME)  \n"
 .section .text
 	lea rax, [rip + .L_str_1]
 	mov rcx, rax
@@ -31,169 +182,61 @@ fmt_int:
 
 .section .rodata
 .L_str_2:
-	.asciz "====================================================\n"
+	.asciz "==================================================\n"
 .section .text
 	lea rax, [rip + .L_str_2]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-	mov rax, 0
-	mov [rbp - 8], rax
-	mov rax, 0
-	mov [rbp - 16], rax
-	lea rax, [rbp - 88]
-	mov rax, 0
-	mov [rbp - 96], rax
-.L_start_while_0:
-	mov rax, 3
-	push rax
-	mov rax, [rbp - 96]
-	pop rbx
-	cmp rax, rbx
-	jge .L_end_while_0
-	mov rax, 0
-	mov [rbp - 104], rax
-	mov rax, 0
-	mov [rbp - 104], rax
-.L_start_for_1:
-	mov rax, 3
-	push rax
-	mov rax, [rbp - 104]
-	pop rbx
-	cmp rax, rbx
-	jge .L_end_for_1
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 104]
-	pop rbx
-	add rax, rbx
-	push rax
-	mov rax, 10
-	push rax
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 96]
-	pop rbx
-	add rax, rbx
-	pop rbx
-	imul rax, rbx
-	pop rbx
-	add rax, rbx
-	push rax
-	mov rax, [rbp - 104]
-	push rax
-	mov rax, 3
-	push rax
-	mov rax, [rbp - 96]
-	pop rbx
-	imul rax, rbx
-	pop rbx
-	add rax, rbx
-	imul rax, 8
-	lea rbx, [rbp - 88]
-	add rax, rbx
-	pop rbx
-	mov [rax], rbx
-.L_inc_for_1:
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 104]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 104], rax
-	jmp .L_start_for_1
-.L_end_for_1:
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 96]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 96], rax
-	jmp .L_start_while_0
-.L_end_while_0:
-	mov rax, 0
-	mov [rbp - 112], rax
-	mov rax, 0
-	mov [rbp - 120], rax
-	mov rax, 0
-	mov [rbp - 120], rax
-.L_start_for_2:
-	mov rax, 3
-	push rax
-	mov rax, [rbp - 120]
-	pop rbx
-	cmp rax, rbx
-	jge .L_end_for_2
-	mov rax, [rbp - 120]
-	push rax
-	mov rax, 3
-	push rax
-	mov rax, [rbp - 120]
-	pop rbx
-	imul rax, rbx
-	pop rbx
-	add rax, rbx
-	imul rax, 8
-	lea rbx, [rbp - 88]
-	add rax, rbx
-	mov rax, [rax]
-	push rax
-	mov rax, [rbp - 112]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 112], rax
-.L_inc_for_2:
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 120]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 120], rax
-	jmp .L_start_for_2
-.L_end_for_2:
-	mov rax, 11
-	push rax
-	mov rax, 0
-	imul rax, 8
-	lea rbx, [rbp - 88]
-	add rax, rbx
-	mov rax, [rax]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_3
-	mov rax, 22
-	push rax
-	mov rax, 4
-	imul rax, 8
-	lea rbx, [rbp - 88]
-	add rax, rbx
-	mov rax, [rax]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_4
-	mov rax, 33
-	push rax
-	mov rax, 8
-	imul rax, 8
-	lea rbx, [rbp - 88]
-	add rax, rbx
-	mov rax, [rax]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_5
-	mov rax, 66
-	push rax
-	mov rax, [rbp - 112]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_6
 
 .section .rodata
 .L_str_3:
-	.asciz "[1] 1D Grid & Scaled Indexing: PASSED\n"
+	.asciz "TEST 1: Unary Minus & Precedence Logic\n"
 .section .text
 	lea rax, [rip + .L_str_3]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
+	mov rax, 5
+	neg rax
+	mov [rbp - 16], rax
+	mov rax, 10
+	neg rax
+	neg rax
+	mov [rbp - 24], rax
+	mov rax, 4
+	push rax
+	mov rax, 20
+	neg rax
+	pop rbx
+	cqo
+	idiv rbx
+	push rax
+	mov rax, [rbp - 24]
+	neg rax
+	push rax
+	mov rax, [rbp - 16]
+	neg rax
+	pop rbx
+	imul rax, rbx
+	pop rbx
+	add rax, rbx
+	mov [rbp - 32], rax
+	mov rax, 55
+	neg rax
+	push rax
+	mov rax, [rbp - 32]
+	pop rbx
+	cmp rax, rbx
+	jne .L_else_3
+
+.section .rodata
+.L_str_4:
+	.asciz "-> TEST 1: PASS\n"
+.section .text
+	lea rax, [rip + .L_str_4]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
@@ -204,69 +247,110 @@ fmt_int:
 	pop rbx
 	add rax, rbx
 	mov [rbp - 8], rax
-	jmp .L_end_6
-.L_else_6:
-
-.section .rodata
-.L_str_4:
-	.asciz "[1] 1D Grid & Scaled Indexing: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_4]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_6:
-	jmp .L_end_5
-.L_else_5:
+	jmp .L_end_3
+.L_else_3:
 
 .section .rodata
 .L_str_5:
-	.asciz "[1] 1D Grid & Scaled Indexing: FAILED\n"
+	.asciz "-> TEST 1: FAIL (Expected -55)\n"
 .section .text
 	lea rax, [rip + .L_str_5]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_5:
-	jmp .L_end_4
-.L_else_4:
+.L_end_3:
 
 .section .rodata
 .L_str_6:
-	.asciz "[1] 1D Grid & Scaled Indexing: FAILED\n"
+	.asciz "TEST 2: Pointer Arithmetic & Array Mutation\n"
 .section .text
 	lea rax, [rip + .L_str_6]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-	mov rax, 1
+	mov rax, 10
 	push rax
-	mov rax, [rbp - 16]
+	mov rax, 0
+	imul rax, 8
+	lea rbx, [rbp - 72]
+	add rax, rbx
+	pop rbx
+	mov [rax], rbx
+	mov rax, 20
+	neg rax
+	push rax
+	mov rax, 1
+	imul rax, 8
+	lea rbx, [rbp - 72]
+	add rax, rbx
+	pop rbx
+	mov [rax], rbx
+	mov rax, 30
+	push rax
+	mov rax, 2
+	imul rax, 8
+	lea rbx, [rbp - 72]
+	add rax, rbx
+	pop rbx
+	mov [rax], rbx
+	mov rax, 40
+	neg rax
+	push rax
+	mov rax, 3
+	imul rax, 8
+	lea rbx, [rbp - 72]
+	add rax, rbx
+	pop rbx
+	mov [rax], rbx
+	mov rax, 50
+	push rax
+	mov rax, 4
+	imul rax, 8
+	lea rbx, [rbp - 72]
+	add rax, rbx
+	pop rbx
+	mov [rax], rbx
+	lea rax, [rbp - 72]
+	mov [rbp - 80], rax
+	mov rax, [rbp - 80]
+	push rax
+	mov rax, 5
+	push rax
+	pop rdx
+	pop rcx
+	sub rsp, 32
+	call mutate_array
+	add rsp, 32
+	mov rax, 3
+	imul rax, 8
+	push rax
+	mov rax, [rbp - 80]
 	pop rbx
 	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_4:
-	jmp .L_end_3
-.L_else_3:
+	mov rax, [rax]
+	push rax
+	mov rax, 1
+	imul rax, 8
+	push rax
+	mov rax, [rbp - 80]
+	pop rbx
+	add rax, rbx
+	mov rax, [rax]
+	pop rbx
+	add rax, rbx
+	mov [rbp - 88], rax
+	mov rax, 120
+	push rax
+	mov rax, [rbp - 88]
+	pop rbx
+	cmp rax, rbx
+	jne .L_else_4
 
 .section .rodata
 .L_str_7:
-	.asciz "[1] 1D Grid & Scaled Indexing: FAILED\n"
+	.asciz "-> TEST 2: PASS\n"
 .section .text
 	lea rax, [rip + .L_str_7]
 	mov rcx, rax
@@ -275,159 +359,233 @@ fmt_int:
 	add rsp, 32
 	mov rax, 1
 	push rax
-	mov rax, [rbp - 16]
+	mov rax, [rbp - 8]
 	pop rbx
 	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_3:
-	lea rax, [rbp - 168]
-	mov rax, 97
-	push rax
-	mov rax, 0
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	mov rax, 98
-	push rax
-	mov rax, 1
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	mov rax, 99
-	push rax
-	mov rax, 2
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	mov rax, 100
-	push rax
-	mov rax, 3
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	mov rax, 101
-	push rax
-	mov rax, 4
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	mov rax, 0
-	push rax
+	mov [rbp - 8], rax
+	jmp .L_end_4
+.L_else_4:
+
+.section .rodata
+.L_str_8:
+	.asciz "-> TEST 2: FAIL (Expected 120)\n"
+.section .text
+	lea rax, [rip + .L_str_8]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
+.L_end_4:
+
+.section .rodata
+.L_str_9:
+	.asciz "TEST 3: Dual Recursion & ABI Register Protection\n"
+.section .text
+	lea rax, [rip + .L_str_9]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
 	mov rax, 5
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	lea rax, [rbp - 168]
-	mov [rbp - 176], rax
-	mov rax, 0
-	mov [rbp - 184], rax
-	mov rax, 4
-	mov [rbp - 192], rax
-.L_start_while_7:
-	mov rax, [rbp - 192]
 	push rax
-	mov rax, [rbp - 184]
+	pop rcx
+	sub rsp, 32
+	call fibonacci
+	add rsp, 32
+	neg rax
+	push rax
+	mov rax, 7
+	push rax
+	pop rcx
+	sub rsp, 32
+	call fibonacci
+	add rsp, 32
+	pop rbx
+	add rax, rbx
+	mov [rbp - 96], rax
+	mov rax, 8
+	push rax
+	mov rax, [rbp - 96]
 	pop rbx
 	cmp rax, rbx
-	jge .L_end_while_7
-	mov rax, [rbp - 184]
-	imul rax, 1
-	mov rbx, [rbp - 176]
-	add rax, rbx
-	movzx rax, byte ptr [rax]
-	mov byte ptr [rbp - 200], al
-	mov rax, [rbp - 192]
-	imul rax, 1
-	mov rbx, [rbp - 176]
-	add rax, rbx
-	movzx rax, byte ptr [rax]
-	push rax
-	mov rax, [rbp - 184]
-	imul rax, 1
-	mov rbx, [rbp - 176]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
-	movzx rax, byte ptr [rbp - 200]
-	push rax
-	mov rax, [rbp - 192]
-	imul rax, 1
-	mov rbx, [rbp - 176]
-	add rax, rbx
-	pop rbx
-	mov byte ptr [rax], bl
+	jne .L_else_5
+
+.section .rodata
+.L_str_10:
+	.asciz "-> TEST 3: PASS\n"
+.section .text
+	lea rax, [rip + .L_str_10]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
 	mov rax, 1
 	push rax
-	mov rax, [rbp - 184]
+	mov rax, [rbp - 8]
 	pop rbx
 	add rax, rbx
-	mov [rbp - 184], rax
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 192]
-	pop rbx
-	sub rax, rbx
-	mov [rbp - 192], rax
-	jmp .L_start_while_7
-.L_end_while_7:
-	mov rax, 101
-	push rax
+	mov [rbp - 8], rax
+	jmp .L_end_5
+.L_else_5:
+
+.section .rodata
+.L_str_11:
+	.asciz "-> TEST 3: FAIL (Expected 8)\n"
+.section .text
+	lea rax, [rip + .L_str_11]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
+.L_end_5:
+
+.section .rodata
+.L_str_12:
+	.asciz "TEST 4: Complex Loop Control & Bitwise Flags\n"
+.section .text
+	lea rax, [rip + .L_str_12]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
 	mov rax, 0
-	imul rax, 1
-	lea rbx, [rbp - 168]
+	mov [rbp - 104], rax
+	mov rax, 0
+	mov [rbp - 112], rax
+.L_start_while_6:
+	mov rax, 10
+	push rax
+	mov rax, [rbp - 112]
+	pop rbx
+	cmp rax, rbx
+	jge .L_end_while_6
+	mov rax, 1
+	push rax
+	mov rax, [rbp - 112]
+	pop rbx
 	add rax, rbx
-	movzx rax, byte ptr [rax]
+	mov [rbp - 112], rax
+	mov rax, 0
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, [rbp - 112]
+	pop rbx
+	and rax, rbx
+	pop rbx
+	cmp rax, rbx
+	je .L_else_7
+	jmp .L_start_while_6
+.L_else_7:
+	mov rax, 6
+	push rax
+	mov rax, [rbp - 112]
 	pop rbx
 	cmp rax, rbx
 	jne .L_else_8
-	mov rax, 100
+	jmp .L_start_while_6
+.L_else_8:
+	mov rax, 10
 	push rax
-	mov rax, 1
-	imul rax, 1
-	lea rbx, [rbp - 168]
-	add rax, rbx
-	movzx rax, byte ptr [rax]
+	mov rax, [rbp - 112]
 	pop rbx
 	cmp rax, rbx
-	jne .L_else_9
-	mov rax, 99
+	jl .L_else_9
+	jmp .L_end_while_6
+.L_else_9:
+	mov rax, [rbp - 112]
 	push rax
-	mov rax, 2
-	imul rax, 1
-	lea rbx, [rbp - 168]
+	mov rax, [rbp - 104]
+	pop rbx
 	add rax, rbx
-	movzx rax, byte ptr [rax]
+	mov [rbp - 104], rax
+	jmp .L_start_while_6
+.L_end_while_6:
+	mov rax, 14
+	push rax
+	mov rax, [rbp - 104]
 	pop rbx
 	cmp rax, rbx
 	jne .L_else_10
-	mov rax, 97
+
+.section .rodata
+.L_str_13:
+	.asciz "-> TEST 4: PASS\n"
+.section .text
+	lea rax, [rip + .L_str_13]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
+	mov rax, 1
 	push rax
-	mov rax, 4
-	imul rax, 1
-	lea rbx, [rbp - 168]
+	mov rax, [rbp - 8]
+	pop rbx
 	add rax, rbx
-	movzx rax, byte ptr [rax]
+	mov [rbp - 8], rax
+	jmp .L_end_10
+.L_else_10:
+
+.section .rodata
+.L_str_14:
+	.asciz "-> TEST 4: FAIL (Expected 14)\n"
+.section .text
+	lea rax, [rip + .L_str_14]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
+.L_end_10:
+
+.section .rodata
+.L_str_15:
+	.asciz "TEST 5: Deeply Nested Function Arguments\n"
+.section .text
+	lea rax, [rip + .L_str_15]
+	mov rcx, rax
+	sub rsp, 32
+	call printf
+	add rsp, 32
+	mov rax, 10
+	neg rax
+	push rax
+	mov rax, 20
+	push rax
+	pop rdx
+	pop rcx
+	sub rsp, 32
+	call add
+	add rsp, 32
+	push rax
+	mov rax, 5
+	push rax
+	mov rax, 15
+	neg rax
+	push rax
+	pop rdx
+	pop rcx
+	sub rsp, 32
+	call sub
+	add rsp, 32
+	push rax
+	pop rdx
+	pop rcx
+	sub rsp, 32
+	call add
+	add rsp, 32
+	mov [rbp - 120], rax
+	mov rax, 30
+	push rax
+	mov rax, [rbp - 120]
 	pop rbx
 	cmp rax, rbx
 	jne .L_else_11
 
 .section .rodata
-.L_str_8:
-	.asciz "[2] Two-Pointer Char In-Place Swap: PASSED\n"
+.L_str_16:
+	.asciz "-> TEST 5: PASS\n"
 .section .text
-	lea rax, [rip + .L_str_8]
+	lea rax, [rip + .L_str_16]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
@@ -442,297 +600,19 @@ fmt_int:
 .L_else_11:
 
 .section .rodata
-.L_str_9:
-	.asciz "[2] Two-Pointer Char In-Place Swap: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_9]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_11:
-	jmp .L_end_10
-.L_else_10:
-
-.section .rodata
-.L_str_10:
-	.asciz "[2] Two-Pointer Char In-Place Swap: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_10]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_10:
-	jmp .L_end_9
-.L_else_9:
-
-.section .rodata
-.L_str_11:
-	.asciz "[2] Two-Pointer Char In-Place Swap: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_11]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_9:
-	jmp .L_end_8
-.L_else_8:
-
-.section .rodata
-.L_str_12:
-	.asciz "[2] Two-Pointer Char In-Place Swap: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_12]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_8:
-	mov rax, 0
-	mov [rbp - 208], rax
-	mov rax, 0
-	mov [rbp - 216], rax
-.L_start_while_12:
-	mov rax, 4
-	push rax
-	mov rax, [rbp - 216]
-	pop rbx
-	cmp rax, rbx
-	jge .L_end_while_12
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 216]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 216], rax
-	mov rax, 0
-	mov [rbp - 224], rax
-	mov rax, 1
-	mov [rbp - 224], rax
-.L_start_for_13:
-	mov rax, 5
-	push rax
-	mov rax, [rbp - 224]
-	pop rbx
-	cmp rax, rbx
-	jg .L_end_for_13
-	mov rax, 0
-	push rax
-	mov rax, 2
-	push rax
-	mov rax, [rbp - 224]
-	pop rbx
-	cqo
-	idiv rbx
-	mov rax, rdx
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_14
-	jmp .L_inc_for_13
-.L_else_14:
-	mov rax, 3
-	push rax
-	mov rax, [rbp - 224]
-	pop rbx
-	cmp rax, rbx
-	jle .L_else_15
-	jmp .L_end_for_13
-.L_else_15:
-	mov rax, [rbp - 224]
-	push rax
-	mov rax, [rbp - 208]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 208], rax
-.L_inc_for_13:
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 224]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 224], rax
-	jmp .L_start_for_13
-.L_end_for_13:
-	jmp .L_start_while_12
-.L_end_while_12:
-	mov rax, 16
-	push rax
-	mov rax, [rbp - 208]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_16
-
-.section .rodata
-.L_str_13:
-	.asciz "[3] Interleaved Flow Control: PASSED\n"
-.section .text
-	lea rax, [rip + .L_str_13]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 8]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 8], rax
-	jmp .L_end_16
-.L_else_16:
-
-.section .rodata
-.L_str_14:
-	.asciz "[3] Interleaved Flow Control: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_14]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_16:
-	mov rax, 50
-	mov [rbp - 232], rax
-	mov rax, 100
-	mov [rbp - 240], rax
-	lea rax, [rbp - 232]
-	mov [rbp - 248], rax
-	lea rax, [rbp - 240]
-	mov [rbp - 256], rax
-	mov rax, 25
-	push rax
-	mov rax, [rbp - 248]
-	mov rax, [rax]
-	pop rbx
-	add rax, rbx
-	push rax
-	mov rax, [rbp - 248]
-	pop rbx
-	mov [rax], rbx
-	mov rax, [rbp - 248]
-	mov rax, [rax]
-	push rax
-	mov rax, [rbp - 256]
-	mov rax, [rax]
-	pop rbx
-	sub rax, rbx
-	push rax
-	mov rax, [rbp - 256]
-	pop rbx
-	mov [rax], rbx
-	mov rax, [rbp - 256]
-	mov [rbp - 248], rax
-	mov rax, 2
-	push rax
-	mov rax, [rbp - 248]
-	mov rax, [rax]
-	pop rbx
-	imul rax, rbx
-	push rax
-	mov rax, [rbp - 248]
-	pop rbx
-	mov [rax], rbx
-	mov rax, 75
-	push rax
-	mov rax, [rbp - 232]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_17
-	mov rax, 50
-	push rax
-	mov rax, [rbp - 240]
-	pop rbx
-	cmp rax, rbx
-	jne .L_else_18
-
-.section .rodata
-.L_str_15:
-	.asciz "[4] Pointer Deref & Re-assignment: PASSED\n"
-.section .text
-	lea rax, [rip + .L_str_15]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 8]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 8], rax
-	jmp .L_end_18
-.L_else_18:
-
-.section .rodata
-.L_str_16:
-	.asciz "[4] Pointer Deref & Re-assignment: FAILED\n"
-.section .text
-	lea rax, [rip + .L_str_16]
-	mov rcx, rax
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_18:
-	jmp .L_end_17
-.L_else_17:
-
-.section .rodata
 .L_str_17:
-	.asciz "[4] Pointer Deref & Re-assignment: FAILED\n"
+	.asciz "-> TEST 5: FAIL (Expected 30)\n"
 .section .text
 	lea rax, [rip + .L_str_17]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-	mov rax, 1
-	push rax
-	mov rax, [rbp - 16]
-	pop rbx
-	add rax, rbx
-	mov [rbp - 16], rax
-.L_end_17:
+.L_end_11:
 
 .section .rodata
 .L_str_18:
-	.asciz "====================================================\n"
+	.asciz "==================================================\n"
 .section .text
 	lea rax, [rip + .L_str_18]
 	mov rcx, rax
@@ -742,7 +622,7 @@ fmt_int:
 
 .section .rodata
 .L_str_19:
-	.asciz "Passed Modules: "
+	.asciz "TOTAL PASSED TESTS (OUT OF 5):\n"
 .section .text
 	lea rax, [rip + .L_str_19]
 	mov rcx, rax
@@ -758,52 +638,46 @@ fmt_int:
 
 .section .rodata
 .L_str_20:
-	.asciz "Failed Modules: "
+	.asciz "\n"
 .section .text
 	lea rax, [rip + .L_str_20]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-	mov rax, [rbp - 16]
-	mov rdx, rax
-	lea rcx, [rip + fmt_int]
-	sub rsp, 32
-	call printf
-	add rsp, 32
-	mov rax, 0
+	mov rax, 5
 	push rax
-	mov rax, [rbp - 16]
+	mov rax, [rbp - 8]
 	pop rbx
 	cmp rax, rbx
-	jne .L_else_19
+	jne .L_else_12
 
 .section .rodata
 .L_str_21:
-	.asciz ">>> HARDCORE EDGE-CASE TESTS PASSED! <<<\n"
+	.asciz ">>> CONGRATULATIONS! ALL LIMIT TESTS PASSED! <<<\n"
 .section .text
 	lea rax, [rip + .L_str_21]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-	jmp .L_end_19
-.L_else_19:
+	jmp .L_end_12
+.L_else_12:
 
 .section .rodata
 .L_str_22:
-	.asciz ">>> HARDCORE EDGE-CASE TESTS FAILED! <<<\n"
+	.asciz ">>> STRESS TEST DETECTED BUGS IN COMPILER! <<<\n"
 .section .text
 	lea rax, [rip + .L_str_22]
 	mov rcx, rax
 	sub rsp, 32
 	call printf
 	add rsp, 32
-.L_end_19:
+.L_end_12:
 
 .section .rodata
 .L_str_23:
-	.asciz "====================================================\n"
+	.asciz "==================================================\n"
 .section .text
 	lea rax, [rip + .L_str_23]
 	mov rcx, rax
@@ -811,5 +685,8 @@ fmt_int:
 	call printf
 	add rsp, 32
 	mov rax, 0
-	leave
+	jmp .L_ret_main
+.L_ret_main:
+	mov rsp, rbp
+	pop rbp
 	ret

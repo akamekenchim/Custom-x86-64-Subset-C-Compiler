@@ -3,31 +3,30 @@
 #include "codegen.h"
 static FILE *asm_out = NULL;
 
-// Khởi tạo file stream
+// initialize the target file
 int init_asm_emitter(const char *filename) {
     asm_out = fopen(filename, "w");
     if (!asm_out) {
-        return 0; // Thất bại
+        return 0; 
     }
-    return 1; // Thành công
+    return 1; 
 }
 
-// Hàm variadic đóng vai trò như printf chuyên dụng cho ASM
+// variadic function to emit ASM x86 into target file (format similar to printf)
 void asm_printf(const char *format, ...) {
     if (!asm_out) return;
 
     va_list args;
     va_start(args, format);
     
-    // vfprintf nhận vào va_list và đẩy thẳng vào stream của file
+    // parses the va_list and formats it like printf
     vfprintf(asm_out, format, args);
     
     va_end(args);
-    
-    // Tùy chọn: fflush(asm_out) nếu muốn dữ liệu ghi xuống đĩa ngay lập tức
+    //fflush(asm_out);
 }
 
-// Đóng file stream sạch sẽ
+// close the target file
 void close_asm_emitter() {
     if (asm_out) {
         fclose(asm_out);

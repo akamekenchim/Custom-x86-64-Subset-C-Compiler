@@ -6,62 +6,62 @@
 #include "codegen.h"
 ASTNode *root = NULL;
 int main(int argc, char *argv[]) {
-    // 1. Kiểm tra tham số dòng lệnh
+    // check command line arguments
     if (argc < 2) {
         fprintf(stderr, "Error: No input file specified.\n");
         fprintf(stderr, "Usage: %s <source_file.c>\n", argv[0]);
         return 1;
     }
 
-    // 2. Mở file nguồn ở chế độ đọc nhị phân (để tính byte chính xác)
+    // open the file in binary reading mode to calculate length
     FILE *file = fopen(argv[1], "rb");
     if (!file) {
-        perror("Lỗi mở file nguồn");
+        perror("File opening Error");
         return 1;
     }
 
-    // 3. Đo kích thước thực tế của file (Dynamic Size Detection)
-    fseek(file, 0, SEEK_END);      // Nhảy xuống đáy file
-    long file_size = ftell(file);  // Lấy vị trí byte hiện tại (chính là độ dài file)
-    fseek(file, 0, SEEK_SET);      // Quay trở lại đầu file
+    // jumps to end of file -> ftell returns the position of the last byte -> jumps back to start of file
+    fseek(file, 0, SEEK_END);      
+    long file_size = ftell(file);  
+    fseek(file, 0, SEEK_SET);      
 
-    // 4. Cấp phát vùng nhớ Heap vừa khít + 1 byte cho ký tự kết thúc chuỗi '\0'
+    //dynamically allocating memory for source code
     char *source = (char *)malloc(file_size + 1);
     if (!source) {
-        fprintf(stderr, "Lỗi cấp phát bộ nhớ cho file nguồn.\n");
+        fprintf(stderr, "Error in allocating memory for the source file.\n");
         fclose(file);
         return 1;
     }
 
-    // 5. Đọc toàn bộ nội dung file vào bộ đệm RAM
+    // use fread to read all bytes of the file into source string then closes file
     size_t bytes_read = fread(source, 1, file_size, file);
-    source[bytes_read] = '\0';     // Bắt buộc phải Null-terminate chuỗi
-    fclose(file);                  // Đóng file nguồn an toàn
+    source[bytes_read] = '\0';     
+    fclose(file);                  
 
-    // 6. Khởi chạy Emitter để xuất file target.asm
+    // initialize the file in writing mode
     if (!init_asm_emitter("target.asm")) {
-        perror("Lỗi mở file target.asm");
+        perror("Error in opening the target.asm");
         free(source);
         return 1;
     }
 
-    // 7. Thực thi Pipeline Biên dịch
+    // init the parser
     init_parser(source);
-    root = parse_multiple_statements();
+    root = parse_program();
     
-    // Debug cây AST lên Console
+    // prints the AST into terminal for debugging
     inOrder(root);
     printf("\n");
 
-    // Sinh mã Assembly ra file target.asm
+    // emits ASM x86 into target.asm
     print_header_to_asm();
     Assembly_Generator(root);
     print_end_assembly_to_asm();
 
-    // 8. Giải phóng toàn bộ tài nguyên hệ thống
+    //safely frees the heap memory
     FreeAll(root);
     close_asm_emitter();
-    free(source);                  // Giải phóng bộ đệm file nguồn trên Heap
+    free(source);                 
 
     return 0;
 }

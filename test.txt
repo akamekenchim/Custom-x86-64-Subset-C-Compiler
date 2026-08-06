@@ -1,149 +1,191 @@
-printf("====================================================\n");
-printf("     C COMPILER HARDCORE EDGE-CASE TEST SUITE       \n");
-printf("====================================================\n");
+// =========================================================================
+// HÀM BỔ TRỢ 1: Phép toán cộng / trừ cơ bản
+// =========================================================================
+int add(int a, int b) {
+    return a + b;
+}
 
-int pass_count = 0;
-int fail_count = 0;
+int sub(int a, int b) {
+    return a - b;
+}
 
-int grid[9];
-int r = 0;
-while (r < 3) {
-    int c = 0;
-    for (c = 0; c < 3; c = c + 1) {
-        grid[r * 3 + c] = (r + 1) * 10 + (c + 1);
+// =========================================================================
+// HÀM BỔ TRỢ 2: Đệ quy đôi (Dual Recursion)
+// =========================================================================
+int fibonacci(int n) {
+    if (n <= 0) {
+        return 0;
     }
-    r = r + 1;
-}
-
-int diag_sum = 0;
-int k = 0;
-for (k = 0; k < 3; k = k + 1) {
-    diag_sum = diag_sum + grid[k * 3 + k];
-}
-
-if (grid[0] == 11) {
-    if (grid[4] == 22) {
-        if (grid[8] == 33) {
-            if (diag_sum == 66) {
-                printf("[1] 1D Grid & Scaled Indexing: PASSED\n");
-                pass_count = pass_count + 1;
-            } else {
-                printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
-                fail_count = fail_count + 1;
-            }
-        } else {
-            printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
-            fail_count = fail_count + 1;
-        }
-    } else {
-        printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
-        fail_count = fail_count + 1;
+    if (n == 1) {
+        return 1;
     }
-} else {
-    printf("[1] 1D Grid & Scaled Indexing: FAILED\n");
-    fail_count = fail_count + 1;
+    return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-char s[6];
-s[0] = 97;
-s[1] = 98;
-s[2] = 99;
-s[3] = 100;
-s[4] = 101;
-s[5] = 0;
-
-char *left_ptr = s;
-int left_idx = 0;
-int right_idx = 4;
-
-while (left_idx < right_idx) {
-    char temp = left_ptr[left_idx];
-    left_ptr[left_idx] = left_ptr[right_idx];
-    left_ptr[right_idx] = temp;
-    left_idx = left_idx + 1;
-    right_idx = right_idx - 1;
-}
-
-if (s[0] == 101) {
-    if (s[1] == 100) {
-        if (s[2] == 99) {
-            if (s[4] == 97) {
-                printf("[2] Two-Pointer Char In-Place Swap: PASSED\n");
-                pass_count = pass_count + 1;
-            } else {
-                printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
-                fail_count = fail_count + 1;
-            }
-        } else {
-            printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
-            fail_count = fail_count + 1;
-        }
-    } else {
-        printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
-        fail_count = fail_count + 1;
+// =========================================================================
+// HÀM BỔ TRỢ 3: Thao tác Mảng qua Con trỏ (Pointer Offset & Pass-by-ref)
+// =========================================================================
+int mutate_array(int *ptr, int size) {
+    int i;
+    for (i = 0; i < size; i = i + 1) {
+        // Gán ptr[i] = -ptr[i] * 2 thông qua giải tham chiếu *(ptr + i)
+        *(ptr + i) = -(*(ptr + i)) * 2;
     }
-} else {
-    printf("[2] Two-Pointer Char In-Place Swap: FAILED\n");
-    fail_count = fail_count + 1;
+    return 0;
 }
 
-int total_acc = 0;
-int outer_cnt = 0;
+// =========================================================================
+// HÀM MAIN KIỂM THỬ MỌI GIỚI HẠN
+// =========================================================================
+int main() {
+    int pass_count;
 
-while (outer_cnt < 4) {
-    outer_cnt = outer_cnt + 1;
-    int inner_cnt = 0;
-    for (inner_cnt = 1; inner_cnt <= 5; inner_cnt = inner_cnt + 1) {
-        if (inner_cnt % 2 == 0) {
-            continue;
-        }
-        if (inner_cnt > 3) {
-            break;
-        }
-        total_acc = total_acc + inner_cnt;
-    }
-}
+    // Biến Test 1: Unary Minus & Precedence
+    int u_a;
+    int u_b;
+    int u_res;
 
-if (total_acc == 16) {
-    printf("[3] Interleaved Flow Control: PASSED\n");
-    pass_count = pass_count + 1;
-} else {
-    printf("[3] Interleaved Flow Control: FAILED\n");
-    fail_count = fail_count + 1;
-}
+    // Biến Test 2: Pointer Arithmetic
+    int arr[5];
+    int *p;
+    int p_sum;
 
-int val_a = 50;
-int val_b = 100;
-int *p1 = &val_a;
-int *p2 = &val_b;
+    // Biến Test 3: Dual Recursion & Unary Call
+    int rec_res;
 
-*p1 = *p1 + 25;
-*p2 = *p2 - *p1;
-p1 = p2;
-*p1 = *p1 * 2;
+    // Biến Test 4: Control Flow & Bitwise
+    int flow_i;
+    int flow_sum;
 
-if (val_a == 75) {
-    if (val_b == 50) {
-        printf("[4] Pointer Deref & Re-assignment: PASSED\n");
+    // Biến Test 5: Nested Function Calls
+    int nest_res;
+
+    pass_count = 0;
+
+    printf("==================================================\n");
+    printf("   COMPILER LIMIT & STRESS TEST SUITE (EXTREME)  \n");
+    printf("==================================================\n");
+
+    // ---------------------------------------------------------------------
+    // TEST 1: Unary Minus & Complex Precedence
+    // Công thức: u_res = -(-5) * -10 + (-20 / 4)
+    // Tính toán: 5 * -10 + (-5) = -50 - 5 = -55
+    // ---------------------------------------------------------------------
+    printf("TEST 1: Unary Minus & Precedence Logic\n");
+    u_a = -5;
+    u_b = -(-10); // u_b = 10
+    u_res = -u_a * -u_b + (-20 / 4);
+
+    if (u_res == -55) {
+        printf("-> TEST 1: PASS\n");
         pass_count = pass_count + 1;
     } else {
-        printf("[4] Pointer Deref & Re-assignment: FAILED\n");
-        fail_count = fail_count + 1;
+        printf("-> TEST 1: FAIL (Expected -55)\n");
     }
-} else {
-    printf("[4] Pointer Deref & Re-assignment: FAILED\n");
-    fail_count = fail_count + 1;
-}
 
-printf("====================================================\n");
-printf("Passed Modules: ");
-printf(pass_count);
-printf("Failed Modules: ");
-printf(fail_count);
+    // ---------------------------------------------------------------------
+    // TEST 2: Pointer Arithmetic & Array Decay
+    // Khởi tạo: [10, -20, 30, -40, 50]
+    // Sau mutate: [-20, 40, -60, 80, -100]
+    // p_sum = arr[1] + arr[3] = 40 + 80 = 120
+    // ---------------------------------------------------------------------
+    printf("TEST 2: Pointer Arithmetic & Array Mutation\n");
+    arr[0] = 10;
+    arr[1] = -20;
+    arr[2] = 30;
+    arr[3] = -40;
+    arr[4] = 50;
 
-if (fail_count == 0) {
-    printf(">>> HARDCORE EDGE-CASE TESTS PASSED! <<<\n");
-} else {
-    printf(">>> HARDCORE EDGE-CASE TESTS FAILED! <<<\n");
+    p = arr;
+    mutate_array(p, 5);
+
+    p_sum = *(p + 1) + *(p + 3); // 40 + 80
+
+    if (p_sum == 120) {
+        printf("-> TEST 2: PASS\n");
+        pass_count = pass_count + 1;
+    } else {
+        printf("-> TEST 2: FAIL (Expected 120)\n");
+    }
+
+    // ---------------------------------------------------------------------
+    // TEST 3: Dual Recursion Mixed with Unary Operations
+    // Tính toán: fib(7) + -fib(5) = 13 + -5 = 8
+    // ---------------------------------------------------------------------
+    printf("TEST 3: Dual Recursion & ABI Register Protection\n");
+    rec_res = fibonacci(7) + -fibonacci(5);
+
+    if (rec_res == 8) {
+        printf("-> TEST 3: PASS\n");
+        pass_count = pass_count + 1;
+    } else {
+        printf("-> TEST 3: FAIL (Expected 8)\n");
+    }
+
+    // ---------------------------------------------------------------------
+    // TEST 4: Flow Control (For + While + Break + Continue + Bitwise)
+    // Vòng lặp tính tổng các số chẵn trong khoảng 1..10, bỏ qua 6, ngắt khi >= 10
+    // Các số chẵn được chọn: 2, 4, 8 -> Tổng = 14
+    // ---------------------------------------------------------------------
+    printf("TEST 4: Complex Loop Control & Bitwise Flags\n");
+    flow_sum = 0;
+    flow_i = 0;
+
+    while (flow_i < 10) {
+        flow_i = flow_i + 1;
+
+        // Bỏ qua số lẻ dùng Bitwise AND (& 1)
+        if ((flow_i & 1) != 0) {
+            continue;
+        }
+
+        if (flow_i == 6) {
+            continue; // Bỏ qua 6
+        }
+
+        if (flow_i >= 10) {
+            break; // Ngắt vòng lặp khi chạm 10
+        }
+
+        flow_sum = flow_sum + flow_i;
+    }
+
+    if (flow_sum == 14) {
+        printf("-> TEST 4: PASS\n");
+        pass_count = pass_count + 1;
+    } else {
+        printf("-> TEST 4: FAIL (Expected 14)\n");
+    }
+
+    // ---------------------------------------------------------------------
+    // TEST 5: Deeply Nested Function Expressions
+    // Tính toán: add( add(-10, 20), sub(5, -15) )
+    // -> add( 10, 20 ) = 30
+    // ---------------------------------------------------------------------
+    printf("TEST 5: Deeply Nested Function Arguments\n");
+    nest_res = add(add(-10, 20), sub(5, -15));
+
+    if (nest_res == 30) {
+        printf("-> TEST 5: PASS\n");
+        pass_count = pass_count + 1;
+    } else {
+        printf("-> TEST 5: FAIL (Expected 30)\n");
+    }
+
+    // ---------------------------------------------------------------------
+    // TỔNG KẾT BÀI TEST
+    // ---------------------------------------------------------------------
+    printf("==================================================\n");
+    printf("TOTAL PASSED TESTS (OUT OF 5):\n");
+    printf(pass_count);
+    printf("\n");
+
+    if (pass_count == 5) {
+        printf(">>> CONGRATULATIONS! ALL LIMIT TESTS PASSED! <<<\n");
+    } else {
+        printf(">>> STRESS TEST DETECTED BUGS IN COMPILER! <<<\n");
+    }
+    printf("==================================================\n");
+
+    return 0;
 }
-printf("====================================================\n");

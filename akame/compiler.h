@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define MAX_LEXEME_LENGTH 256
+#define MAX_NAME_NODE_LENGTH 48
+
 
 typedef struct V{
     char name[20];
@@ -11,117 +14,157 @@ typedef struct V{
 }Variable;
 
 typedef enum {
-    NODE_ASSIGN,     // Nút đại diện cho phép gán '='
-    NODE_VARIABLE,   // Nút đại diện cho biến (ví dụ: x)
-    NODE_LITERAL,     // Nút đại diện cho hằng số (ví dụ: 42)
+    // Program control nodes
+    NODE_PROGRAM, 
+    NODE_BLOCK,
+    NODE_SEQ,
+
+    // Function management
+    NODE_FUNC_DEFINE,
+    NODE_FUNC_PARAM_LIST,
+    NODE_FUNC_CALL,
+    NODE_RETURN,
+
+    // Control flow nodes
+    NODE_IF,
+    NODE_IF_BODY,
+    NODE_WHILE,
+    NODE_FOR,
+    NODE_FOR_HEADER, // declaration, condition, increment
+    NODE_BREAK,
+    NODE_CONTINUE,
+    NODE_PRINT,
+
+    // assignment and literals, variables
+    NODE_ASSIGN,
+    NODE_VARIABLE,
+    NODE_LITERAL,
+    NODE_STRING,
+
+    // arithmetic operation nodes
     NODE_ADD,
     NODE_SUB,
-    NODE_IF,
-    NODE_EQUAL,
-    NODE_IF_BODY,
-    NODE_LESS_THAN,
-    NODE_BLOCK,
-    NODE_PRINT,
-    NODE_WHILE,
-    NODE_SEQ,
-    NODE_STRING,
-    NODE_BITWISE_OR,
-    NODE_BITWISE_AND,
-    NODE_REMAINDER,
     NODE_MULTIPLY,
     NODE_DIVIDE,
+    NODE_REMAINDER,
+    NODE_UNARY_MINUS,
+
+    // comparison nodes
+    NODE_EQUAL,
+    NODE_NOT_EQUAL,
+    NODE_LESS_THAN,
+    NODE_LESS_EQUAL,
+    NODE_GREATER_THAN,
+    NODE_GREATER_EQUAL,
+
+    // arithmetic bitwise shifting nodes and logical nodes
+    NODE_BITWISE_AND,
+    NODE_BITWISE_OR,
     NODE_BITWISE_SHIFT_LEFT,
     NODE_BITWISE_SHIFT_RIGHT,
-    NODE_LESS_EQUAL,
-    NODE_GREATER_EQUAL,
-    NODE_GREATER_THAN,
-    NODE_NOT_EQUAL,
+
+    // pointers and memory management
     NODE_ADDR,
     NODE_DEREF,
-    NODE_ARRAY_ACCESS,
-    NODE_FOR,
-    NODE_FOR_HEADER,
-    NODE_BREAK,
-    NODE_CONTINUE
+    NODE_ARRAY_ACCESS
 } ASTNodeType;
 
 typedef enum {
-    TOKEN_INT_KEYWORD, // Từ khóa 'int'
+    // keywords
+    TOKEN_INT_KEYWORD,
     TOKEN_CHAR_KEYWORD,
-    TOKEN_IDENTIFIER,  // Tên biến (ví dụ: x, y, sum)
-    TOKEN_ASSIGN,      // Toán tử gán '='
-    TOKEN_NUMBER,      // Con số (ví dụ: 42, 100)
-    TOKEN_ADD, 
-    TOKEN_SUB,
-    TOKEN_EOF,       // Ký hiệu kết thúc file (End Of File)
+    TOKEN_VOID_KEYWORD,
     TOKEN_IF,
     TOKEN_ELSE,
-    TOKEN_LPAREN,
-    TOKEN_RPAREN,
-    TOKEN_RBRACE,
-    TOKEN_LBRACE,
-    TOKEN_EQUAL,
-    TOKEN_LESS_THAN,
-    TOKEN_GREATER_THAN,
-    TOKEN_PRINT,
     TOKEN_WHILE,
-    TOKEN_SEMICOLON,
-    TOKEN_STRING,
-    TOKEN_BITWISE_OR,
-    TOKEN_BITWISE_AND,
-    TOKEN_REMAINDER,
-    TOKEN_MULTIPLY,
-    TOKEN_DIVIDE,
-    TOKEN_BITWISE_SHIFT_LEFT,
-    TOKEN_BITWISE_SHIFT_RIGHT,
-    TOKEN_LESS_EQUAL,
-    TOKEN_GREATER_EQUAL,
-    TOKEN_NOT_EQUAL,
-    TOKEN_CHAR_LITERAL,
-    TOKEN_POINTER,
-    TOKEN_GET_ADDRESS,
-    TOKEN_LBRACKET,
-    TOKEN_RBRACKET,
     TOKEN_FOR_KEYWORD,
     TOKEN_BREAK_KEYWORD,
-    TOKEN_CONTINUE_KEYWORD
+    TOKEN_CONTINUE_KEYWORD,
+    TOKEN_RETURN,
+    TOKEN_PRINT,
+
+    // identifiers and literals
+    TOKEN_IDENTIFIER,
+    TOKEN_NUMBER,
+    TOKEN_STRING,
+    TOKEN_CHAR_LITERAL,
+
+    // (Assignment & Arithmetic Operators)
+    TOKEN_ASSIGN,
+    TOKEN_ADD,
+    TOKEN_SUB,
+    TOKEN_MULTIPLY,
+    TOKEN_DIVIDE,
+    TOKEN_REMAINDER,
+
+    // (Relational Operators)
+    TOKEN_EQUAL,
+    TOKEN_NOT_EQUAL,
+    TOKEN_LESS_THAN,
+    TOKEN_LESS_EQUAL,
+    TOKEN_GREATER_THAN,
+    TOKEN_GREATER_EQUAL,
+
+    // (Bitwise Operators)
+    TOKEN_BITWISE_AND,
+    TOKEN_BITWISE_OR,
+    TOKEN_BITWISE_SHIFT_LEFT,
+    TOKEN_BITWISE_SHIFT_RIGHT,
+
+    // (Pointer & Memory Operators)
+    TOKEN_POINTER,
+    TOKEN_GET_ADDRESS,
+
+    // Delimiters & Punctuators
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
+    TOKEN_LBRACKET,
+    TOKEN_RBRACKET,
+    TOKEN_LBRACE,
+    TOKEN_RBRACE,
+    TOKEN_SEMICOLON,
+    TOKEN_COMMA,
+
+    // end of file token
+    TOKEN_EOF
 } TokenType;
 
 typedef enum {
     TYPE_UNKNOWN,
-    TYPE_INT,       // 8 bytes (hoặc 4 bytes)
+    // int, char, void
+    TYPE_INT,       // 8 bytes
     TYPE_CHAR,      // 1 byte
     TYPE_VOID,
+    // pointers and arrays
     TYPE_INT_PTR,
     TYPE_CHAR_PTR,
     TYPE_INT_ARRAY,
     TYPE_CHAR_ARRAY
 } DataType;
 
-// Cấu trúc đóng gói thông tin của một Token
 typedef struct {
-    TokenType type;    // Loại Token
-    char lexeme[64];   // Chuỗi ký tự gốc (ví dụ: "sum", "42")
-    int value;         // Giá trị thực tế (chỉ dùng nếu type là TOKEN_NUMBER)
+    TokenType type;    
+    char lexeme[MAX_LEXEME_LENGTH];   // original stream source
+    int value;         // literal value 
 } Token;
 
 // 2. Cấu trúc của một Nút trên cây
 typedef struct ASTNode {
-    ASTNodeType type;          // Loại nút để biết cách xử lý
-    DataType data_type;         // Kiểu dữ liệu của nút (nếu cần)
-    char name[64];             // Dùng để lưu tên biến (nếu là NODE_VARIABLE)
-    int int_value;             // Dùng để lưu giá trị số (nếu là NODE_LITERAL)
+    ASTNodeType type;   
+    DataType data_type;     
+    char name[MAX_NAME_NODE_LENGTH];             
+    int int_value;             
     char *string_value;
 
-    int element_count;
+    int element_count; // array management
 
-    struct ASTNode *left;      // Con trỏ chỉ tới nút con bên trái
-    struct ASTNode *right;     // Con trỏ chỉ tới nút con bên phải
+    struct ASTNode *left;     
+    struct ASTNode *right;    
 
 } ASTNode;
 
 typedef struct S{
-    char symbol_name[25];
+    char symbol_name[MAX_NAME_NODE_LENGTH];
     DataType data_type;
     int size_bytes;
 } Symbol;
@@ -145,5 +188,9 @@ char *function_for_operation(ASTNodeType type);
 int compiler_check_is_comparison_node(ASTNodeType type);
 char *compiler_comparison_classification(ASTNodeType type);
 int get_aligned_stack_size();
+void reset_var_table();
+void scan_local_variables(ASTNode *node);
+void push_loop(int label_id, int type);
+void pop_loop();
 
 #endif
